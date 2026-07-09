@@ -1,0 +1,64 @@
+# Codemagic CI/CD Configuration for Android
+# เอกสารอ้างอิง: https://docs.codemagic.io/yaml-quick-start/yaml-integration/
+
+workflows:
+  android-build:
+    name: Build & Test PayGate Forwarder
+    max_build_duration: 60
+    instance_type: mac_mini_m1 # ใช้เครื่อง M1 ประสิทธิภาพสูงในการสร้างโปรแกรม
+    environment:
+      groups:
+        # คุณสามารถกำหนดกลุ่มตัวแปร (Environment Variables) เช่นคีย์ลับต่างๆ บนเว็บ Codemagic ได้
+        # - keystore_credentials
+        - secrets
+      vars:
+        # กำหนดเวอร์ชัน Java 17 ซึ่งเป็นเวอร์ชันมาตรฐานสำหรับ Kotlin Compose ในปัจจุบัน
+        JAVA_VERSION: "17"
+      node: latest
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: '*'
+          include: true
+          source: true
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
+      - name: Set up JDK $JAVA_VERSION
+        script: |
+          jdk-switch --version $JAVA_VERSION
+
+      - name: Generate Gradle Wrapper (หากไม่มีใน Git)
+        script: |
+          gradle wrapper
+
+      - name: Run Unit Tests (ทดสอบระบบ)
+        script: |
+          ./gradlew testDebugUnitTest
+
+      - name: Build Debug APK (สำหรับนำไปติดตั้งทดสอบ)
+        script: |
+          ./gradlew assembleDebug
+
+      - name: Build Release Bundle (AAB) & APK (สำหรับนำไปอัปโหลดขึ้น Play Store)
+        script: |
+          # บิลด์แบบ Release หากทำการตั้งค่า Signing Key แล้ว ตัวนี้จะลงลายเซ็นแอปให้อัตโนมัติ
+          ./gradlew assembleRelease bundleRelease
+
+    artifacts:
+      # ดึงไฟล์ที่สร้างเสร็จแล้วเก็บเป็นประวัติและดาวน์โหลดได้จากหน้าเว็บ Codemagic
+      - app/build/outputs/apk/**/*.apk
+      - app/build/outputs/bundle/**/*.aab
+      - app/build/outputs/mapping/**/*.txt
+
+    publishing:
+      email:
+        recipients:
+          - edm1175qq@gmail.com # ส่งอีเมลแจ้งเตือนมายังอีเมลของคุณโดยตรงเมื่อบิลด์สำเร็จหรือล้มเหลว
+        notify:
+          success: true
+          failure: true

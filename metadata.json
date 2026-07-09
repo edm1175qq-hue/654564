@@ -1,0 +1,6 @@
+{
+  "name": "PayGate Forwarder",
+  "description": "Forward incoming SMS and banking app notifications (K PLUS, SCB, Krungthai, TrueMoney, etc.) to payment webhooks in real-time with powerful logging and filters.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
