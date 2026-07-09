@@ -1,5 +1,5 @@
 # Codemagic CI/CD Configuration for Android
-# เอกสารอ้างอิง: https://docs.codemagic.io/yaml-quick-start/yaml-integration/
+# เอกสารอ้างอิง: https://codemagic.io
 
 workflows:
   android-build:
@@ -8,12 +8,11 @@ workflows:
     instance_type: mac_mini_m1 # ใช้เครื่อง M1 ประสิทธิภาพสูงในการสร้างโปรแกรม
     environment:
       groups:
-        # คุณสามารถกำหนดกลุ่มตัวแปร (Environment Variables) เช่นคีย์ลับต่างๆ บนเว็บ Codemagic ได้
-        # - keystore_credentials
+        # กำหนดกลุ่มตัวแปร (Environment Variables) เช่นคีย์ลับต่างๆ บนเว็บ Codemagic
         - secrets
       vars:
-        # กำหนดเวอร์ชัน Java 17 ซึ่งเป็นเวอร์ชันมาตรฐานสำหรับ Kotlin Compose ในปัจจุบัน
-        JAVA_VERSION: "17"
+        # ปรับเป็น Java 21 เพื่อให้ทำงานร่วมกับระบบ Gradle 9.3.1 ได้อย่างสมบูรณ์
+        JAVA_VERSION: "21"
       node: latest
     triggering:
       events:
@@ -31,7 +30,8 @@ workflows:
       - name: Set up JDK $JAVA_VERSION
         script: |
           echo "Setting up Java version $JAVA_VERSION"
-          sdk use java 17.0.10-sem || true # ใช้คำสั่งระบบใหม่ในการเลือกเวอร์ชัน Java
+          # ใช้คำสั่งระบบ sdk เพื่อเลือกดึง Java 21 มาใช้งาน
+          sdk use java 21.0.2-sem || true 
 
       - name: Generate Gradle Wrapper (หากไม่มีใน Git)
         script: |
