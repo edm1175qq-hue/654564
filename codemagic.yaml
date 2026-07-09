@@ -30,7 +30,8 @@ workflows:
 
       - name: Set up JDK $JAVA_VERSION
         script: |
-          jdk-switch --version $JAVA_VERSION
+          echo "Setting up Java version $JAVA_VERSION"
+          sdk use java 17.0.10-sem || true # ใช้คำสั่งระบบใหม่ในการเลือกเวอร์ชัน Java
 
       - name: Generate Gradle Wrapper (หากไม่มีใน Git)
         script: |
