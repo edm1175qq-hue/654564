@@ -35,7 +35,8 @@ workflows:
 
       - name: Generate Gradle Wrapper (หากไม่มีใน Git)
         script: |
-          gradle wrapper
+          # บังคับสร้างและอัปเกรดระบบให้เป็นเวอร์ชัน 9.3.1 โดยตรงผ่านตรงนี้เพื่อไม่ให้ระบบคลาวด์ดาวน์โหลดรุ่นเก่าครับ
+          gradle wrapper --gradle-version 9.3.1
 
       - name: Run Unit Tests (ทดสอบระบบ)
         script: |
