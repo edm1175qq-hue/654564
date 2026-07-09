@@ -36,21 +36,20 @@ workflows:
 
       - name: Generate Debug Keystore (สร้างไฟล์ยืนยันตัวตนสำหรับเวอร์ชันทดสอบ)
         script: |
-          # บังคับสร้างไฟล์ debug.keystore ไว้ที่โฟลเดอร์หลัก ($CM_BUILD_DIR) ซึ่งทำหน้าที่เป็น rootDir ของโปรเจกต์
           keytool -genkey -v -keystore $CM_BUILD_DIR/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build Debug APK (สำหรับนำไปติดตั้งทดสอบ)
         script: |
           ./gradlew assembleDebug
 
-      - name: Build Release Bundle (AAB) & APK (สำหรับนำไปอัปโหลดขึ้น Play Store)
-        script: |
-          ./gradlew assembleRelease bundleRelease
+      # ปิดขั้นตอนการบิลด์เพื่อส่งขึ้น Store ชั่วคราว เพื่อให้นำไฟล์ APK หลักไปใช้งานได้ทันที
+      # - name: Build Release Bundle (AAB) & APK (สำหรับนำไปอัปโหลดขึ้น Play Store)
+      #   script: |
+      #     ./gradlew assembleRelease bundleRelease
 
     artifacts:
+      # ตั้งค่าให้ดึงเฉพาะไฟล์ตัวแอปเวอร์ชัน Debug ออกมาให้ดาวน์โหลดใช้งาน
       - app/build/outputs/apk/**/*.apk
-      - app/build/outputs/bundle/**/*.aab
-      - app/build/outputs/mapping/**/*.txt
 
     publishing:
       email:
