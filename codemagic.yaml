@@ -5,13 +5,11 @@ workflows:
   android-build:
     name: Build & Test PayGate Forwarder
     max_build_duration: 60
-    instance_type: mac_mini_m1 # ใช้เครื่อง M1 ประสิทธิภาพสูงในการสร้างโปรแกรม
+    instance_type: mac_mini_m1 
     environment:
       groups:
-        # กำหนดกลุ่มตัวแปร (Environment Variables) เช่นคีย์ลับต่างๆ บนเว็บ Codemagic
         - secrets
       vars:
-        # ปรับเป็น Java 21 เพื่อให้ทำงานร่วมกับระบบ Gradle 9.3.1 ได้อย่างสมบูรณ์
         JAVA_VERSION: "21"
       node: latest
     triggering:
@@ -30,18 +28,16 @@ workflows:
       - name: Set up JDK $JAVA_VERSION
         script: |
           echo "Setting up Java version $JAVA_VERSION"
-          # ใช้คำสั่งระบบ sdk เพื่อเลือกดึง Java 21 มาใช้งาน
           sdk use java 21.0.2-sem || true 
 
       - name: Generate Gradle Wrapper (หากไม่มีใน Git)
         script: |
-          # บังคับสร้างและอัปเกรดระบบให้เป็นเวอร์ชัน 9.3.1 โดยตรงผ่านตรงนี้
           gradle wrapper --gradle-version 9.3.1
 
-      # ปิดขั้นตอน Run Unit Tests ออกชั่วคราวเพื่อให้ Build แอปผ่านได้ทันที
-      # - name: Run Unit Tests (ทดสอบระบบ)
-      #   script: |
-      #     ./gradlew testDebugUnitTest
+      - name: Generate Debug Keystore (สร้างไฟล์ยืนยันตัวตนสำหรับเวอร์ชันทดสอบ)
+        script: |
+          # บังคับสร้างไฟล์ debug.keystore ไว้ที่โฟลเดอร์หลัก ($CM_BUILD_DIR) ซึ่งทำหน้าที่เป็น rootDir ของโปรเจกต์
+          keytool -genkey -v -keystore $CM_BUILD_DIR/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build Debug APK (สำหรับนำไปติดตั้งทดสอบ)
         script: |
@@ -49,11 +45,9 @@ workflows:
 
       - name: Build Release Bundle (AAB) & APK (สำหรับนำไปอัปโหลดขึ้น Play Store)
         script: |
-          # บิลด์แบบ Release หากทำการตั้งค่า Signing Key แล้ว ตัวนี้จะลงลายเซ็นแอปให้อัตโนมัติ
           ./gradlew assembleRelease bundleRelease
 
     artifacts:
-      # ดึงไฟล์ที่สร้างเสร็จแล้วเก็บเป็นประวัติและดาวน์โหลดได้จากหน้าเว็บ Codemagic
       - app/build/outputs/apk/**/*.apk
       - app/build/outputs/bundle/**/*.aab
       - app/build/outputs/mapping/**/*.txt
@@ -61,7 +55,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - edm1175qq@gmail.com # ส่งอีเมลแจ้งเตือนมายังอีเมลของคุณโดยตรงเมื่อบิลด์สำเร็จหรือล้มเหลว
+          - edm1175qq@gmail.com 
         notify:
           success: true
           failure: true
