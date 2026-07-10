@@ -57,6 +57,15 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.DrawerValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Button
@@ -147,6 +156,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+data class DrawerNavigationItem(
+    val index: Int,
+    val icon: String,
+    val title: String,
+    val subtitle: String
+)
+
 @Composable
 fun PayGateApp() {
     val context = LocalContext.current
@@ -155,6 +171,8 @@ fun PayGateApp() {
     val logs by viewModel.allLogs.collectAsState()
 
     var selectedTab by remember { mutableStateOf(0) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     // Dynamic Permission Checklist
     var hasSmsPermissions by remember {
@@ -215,137 +233,230 @@ fun PayGateApp() {
         launcher.launch(list.toTypedArray())
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = Color(0xFFFDF8F6),
-        topBar = {
-            Column(
-                modifier = Modifier
-                    .background(Color(0xFFFDF8F6))
-                    .statusBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
-                    .fillMaxWidth()
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                drawerContainerColor = Color(0xFFFDF8F6),
+                drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
+                modifier = Modifier.width(310.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Header Area
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFEADDFF))
+                        .padding(horizontal = 24.dp, vertical = 24.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "SYSTEM SECURE",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "PayGate Forwarder",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-                    }
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(60.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFEADDFF))
-                            .clickable {
-                                Toast.makeText(context, "ระบบส่งต่อปลอดภัย 🛡️ ผ่านการตรวจสอบแล้ว", Toast.LENGTH_SHORT).show()
-                            },
+                            .background(Color.White)
+                            .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
+                        Text("🛡️", fontSize = 32.sp)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "PayGate Forwarder",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF21005D)
+                    )
+                    Text(
+                        text = "ส่งต่อ SMS & การแจ้งเตือนปลอดภัย",
+                        fontSize = 12.sp,
+                        color = Color(0xFF21005D).copy(alpha = 0.7f)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val isAnyServiceActive = settings.isSmsActive || settings.isNotificationActive
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (isAnyServiceActive) Color(0xFF4CAF50) else Color(0xFFFF9800))
+                        )
                         Text(
-                            text = if (settings.isServiceActive) "🛡️" else "⚠️",
-                            fontSize = 20.sp
+                            text = if (isAnyServiceActive) "ระบบส่งต่อเปิดอยู่" else "ระบบทั้งหมดปิดอยู่",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAnyServiceActive) Color(0xFF1B5E20) else Color(0xFFE65100)
                         )
                     }
                 }
-            }
-        },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color(0xFFF3EDF7),
-                tonalElevation = 0.dp,
-                modifier = Modifier
-                    .height(80.dp)
-                    .background(Color(0xFFF3EDF7))
-                    .navigationBarsPadding()
-            ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Text("🏠", fontSize = 20.sp) },
-                    label = { Text("Monitor", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        unselectedIconColor = Color.Black.copy(alpha = 0.5f),
-                        selectedTextColor = Color.Black,
-                        unselectedTextColor = Color.Black.copy(alpha = 0.5f),
-                        indicatorColor = Color(0xFFE8DEF8)
-                    )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Navigation Drawer Items
+                Text(
+                    text = "เมนูควบคุมแอปพลิเคชัน",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                 )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { Text("📝", fontSize = 20.sp) },
-                    label = { Text("ประวัติ", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        unselectedIconColor = Color.Black.copy(alpha = 0.5f),
-                        selectedTextColor = Color.Black,
-                        unselectedTextColor = Color.Black.copy(alpha = 0.5f),
-                        indicatorColor = Color(0xFFE8DEF8)
-                    )
+
+                val menuItems = listOf(
+                    DrawerNavigationItem(0, "🏠", "หน้าจอ Monitor", "สถานะและการทำงานล่าสุด"),
+                    DrawerNavigationItem(1, "📝", "ประวัติการส่งต่อ", "ข้อมูล SMS และการเรียกใช้ Webhook"),
+                    DrawerNavigationItem(2, "📖", "คู่มือการเชื่อมต่อ Webhook", "รายละเอียด Payload และความปลอดภัย"),
+                    DrawerNavigationItem(3, "⚙️", "ตั้งค่าระบบ (Settings)", "กำหนดค่า URL และ HTTP Token")
                 )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = { Text("📖", fontSize = 20.sp) },
-                    label = { Text("คู่มือ", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        unselectedIconColor = Color.Black.copy(alpha = 0.5f),
-                        selectedTextColor = Color.Black,
-                        unselectedTextColor = Color.Black.copy(alpha = 0.5f),
-                        indicatorColor = Color(0xFFE8DEF8)
+
+                menuItems.forEach { item ->
+                    val isSelected = selectedTab == item.index
+                    NavigationDrawerItem(
+                        icon = { Text(item.icon, fontSize = 20.sp) },
+                        label = {
+                            Column {
+                                Text(
+                                    text = item.title,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 14.sp,
+                                    color = if (isSelected) Color(0xFF21005D) else Color.Black
+                                )
+                                Text(
+                                    text = item.subtitle,
+                                    fontSize = 10.sp,
+                                    color = if (isSelected) Color(0xFF21005D).copy(alpha = 0.7f) else Color.Gray
+                                )
+                            }
+                        },
+                        selected = isSelected,
+                        onClick = {
+                            selectedTab = item.index
+                            scope.launch {
+                                drawerState.close()
+                            }
+                        },
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = NavigationDrawerItemDefaults.colors(
+                            selectedContainerColor = Color(0xFFEADDFF),
+                            unselectedContainerColor = Color.Transparent,
+                            selectedIconColor = Color.Black,
+                            unselectedIconColor = Color.Black,
+                            selectedTextColor = Color.Black,
+                            unselectedTextColor = Color.Black
+                        )
                     )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 3,
-                    onClick = { selectedTab = 3 },
-                    icon = { Text("⚙️", fontSize = 20.sp) },
-                    label = { Text("Settings", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        unselectedIconColor = Color.Black.copy(alpha = 0.5f),
-                        selectedTextColor = Color.Black,
-                        unselectedTextColor = Color.Black.copy(alpha = 0.5f),
-                        indicatorColor = Color(0xFFE8DEF8)
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = Color.LightGray.copy(alpha = 0.5f))
+
+                // Footer version info
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "PayGate Forwarder v1.1.0 🛡️",
+                        fontSize = 10.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold
                     )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 4,
-                    onClick = { selectedTab = 4 },
-                    icon = { Text("⚡", fontSize = 20.sp) },
-                    label = { Text("Simulator", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        unselectedIconColor = Color.Black.copy(alpha = 0.5f),
-                        selectedTextColor = Color.Black,
-                        unselectedTextColor = Color.Black.copy(alpha = 0.5f),
-                        indicatorColor = Color(0xFFE8DEF8)
+                    Text(
+                        text = "ระบบส่งต่อและเชื่อมต่อ Webhook อัจฉริยะ",
+                        fontSize = 8.sp,
+                        color = Color.Gray.copy(alpha = 0.8f)
                     )
-                )
+                }
             }
         }
-    ) { innerPadding ->
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+    ) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color(0xFFFDF8F6),
+            topBar = {
+                Column(
+                    modifier = Modifier
+                        .background(Color(0xFFFDF8F6))
+                        .statusBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                        .fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // ปุ่มเมนู 3 ขีดสำหรับเปิด Drawer
+                            IconButton(
+                                onClick = {
+                                    scope.launch {
+                                        drawerState.open()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFEADDFF))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = "เปิดเมนูด้านข้าง",
+                                    tint = Color(0xFF21005D)
+                                )
+                            }
+
+                            Column {
+                                Text(
+                                    text = "SYSTEM SECURE",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black,
+                                    letterSpacing = 1.sp
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "PayGate Forwarder",
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFEADDFF))
+                                .clickable {
+                                    Toast.makeText(context, "ระบบส่งต่อปลอดภัย 🛡️ ผ่านการตรวจสอบแล้ว", Toast.LENGTH_SHORT).show()
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val isAnyServiceActive = settings.isSmsActive || settings.isNotificationActive
+                            Text(
+                                text = if (isAnyServiceActive) "🛡️" else "⚠️",
+                                fontSize = 20.sp
+                            )
+                        }
+                    }
+                }
+            }
+        ) { innerPadding ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
             color = Color(0xFFFDF8F6)
         ) {
             when (selectedTab) {
@@ -363,8 +474,11 @@ fun PayGateApp() {
                     onClearAll = {
                         viewModel.clearLogs()
                     },
-                    onToggleService = { checked ->
-                        viewModel.saveSettings(settings.copy(isServiceActive = checked))
+                    onToggleSmsService = { checked ->
+                        viewModel.saveSettings(settings.copy(isSmsActive = checked))
+                    },
+                    onToggleNotificationService = { checked ->
+                        viewModel.saveSettings(settings.copy(isNotificationActive = checked))
                     },
                     onNavigateToSettings = {
                         selectedTab = 3
@@ -419,23 +533,10 @@ fun PayGateApp() {
                         Toast.makeText(context, "บันทึกข้อมูลตั้งค่าเรียบร้อยแล้ว", Toast.LENGTH_SHORT).show()
                     }
                 )
-                4 -> {
-                    val isAutoSimulating by viewModel.isAutoSimulating.collectAsState()
-                    SimulatorScreen(
-                        isServiceActive = settings.isServiceActive,
-                        isAutoSimulating = isAutoSimulating,
-                        onToggleAutoSimulate = { active ->
-                            viewModel.toggleAutoSimulation(active)
-                        },
-                        onSimulate = { sender, msg ->
-                            viewModel.simulateSmsReceived(sender, msg)
-                            Toast.makeText(context, "จำลองการรับ SMS และส่งต่อไปยัง Webhook แล้ว!", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
             }
         }
     }
+}
 }
 
 @Composable
@@ -446,7 +547,8 @@ fun LogsScreen(
     hasNotificationAccess: Boolean,
     onResend: (SmsLog) -> Unit,
     onClearAll: () -> Unit,
-    onToggleService: (Boolean) -> Unit,
+    onToggleSmsService: (Boolean) -> Unit,
+    onToggleNotificationService: (Boolean) -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onRequestPermissions: () -> Unit,
@@ -561,8 +663,9 @@ fun LogsScreen(
 
         // Row 1: Main Status Card (Spans full width)
         item {
+            val isAnyActive = settings.isSmsActive || settings.isNotificationActive
             MainStatusCard(
-                isServiceActive = settings.isServiceActive,
+                isServiceActive = isAnyActive,
                 successCount = successCount
             )
         }
@@ -581,10 +684,12 @@ fun LogsScreen(
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     SystemStatusCard(
-                        isServiceActive = settings.isServiceActive,
+                        isSmsActive = settings.isSmsActive,
+                        isNotificationActive = settings.isNotificationActive,
                         hasPermissions = hasSmsPermissions,
                         hasNotificationAccess = hasNotificationAccess,
-                        onToggleService = onToggleService,
+                        onToggleSmsService = onToggleSmsService,
+                        onToggleNotificationService = onToggleNotificationService,
                         onRequestPermissions = onRequestPermissions,
                         onRequestNotificationAccess = onRequestNotificationAccess
                     )
@@ -610,11 +715,12 @@ fun LogsScreen(
                         letterSpacing = 1.sp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
+                    val isAnyActive = settings.isSmsActive || settings.isNotificationActive
                     Box(
                         modifier = Modifier
                             .size(8.dp)
                             .clip(CircleShape)
-                            .background(if (settings.isServiceActive) Color(0xFF34A853) else Color(0xFFCAC4D0))
+                            .background(if (isAnyActive) Color(0xFF34A853) else Color(0xFFCAC4D0))
                     )
                 }
                 if (logs.isNotEmpty()) {
@@ -820,14 +926,15 @@ fun DestinationCard(
 
 @Composable
 fun SystemStatusCard(
-    isServiceActive: Boolean,
+    isSmsActive: Boolean,
+    isNotificationActive: Boolean,
     hasPermissions: Boolean,
     hasNotificationAccess: Boolean,
-    onToggleService: (Boolean) -> Unit,
+    onToggleSmsService: (Boolean) -> Unit,
+    onToggleNotificationService: (Boolean) -> Unit,
     onRequestPermissions: () -> Unit,
     onRequestNotificationAccess: () -> Unit
 ) {
-    val hasAll = hasPermissions && hasNotificationAccess
     Card(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
@@ -839,61 +946,101 @@ fun SystemStatusCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(12.dp)
                 .fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("🛡️", fontSize = 18.sp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text("🛡️", fontSize = 16.sp)
                 Text(
-                    text = "สลับสถานะระบบ",
-                    fontSize = 13.sp,
+                    text = "เปิด/ปิดระบบแยกส่วน",
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = if (!hasAll) "สิทธิ์ไม่ครบ" else if (isServiceActive) "เปิดระบบ" else "ปิดระบบ",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                if (!hasAll) {
-                    Button(
-                        onClick = {
-                            if (!hasPermissions) {
-                                onRequestPermissions()
-                            } else {
-                                onRequestNotificationAccess()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                        modifier = Modifier.height(28.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.3f))
-                    ) {
-                        Text("แก้ไข", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
-                } else {
-                    Switch(
-                        checked = isServiceActive,
-                        onCheckedChange = onToggleService,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color(0xFFF2B8B5),
-                            checkedTrackColor = Color(0xFF410002),
-                            uncheckedThumbColor = Color(0xFF410002),
-                            uncheckedTrackColor = Color(0xFFF2B8B5).copy(alpha = 0.5f)
-                        ),
-                        modifier = Modifier.testTag("service_active_switch")
+                // SMS Switch
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ดักจับ SMS",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
                     )
+                    if (!hasPermissions) {
+                        Button(
+                            onClick = onRequestPermissions,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                            modifier = Modifier.height(24.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.2f))
+                        ) {
+                            Text("สิทธิ์", fontSize = 9.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Switch(
+                            checked = isSmsActive,
+                            onCheckedChange = onToggleSmsService,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color(0xFFF2B8B5),
+                                checkedTrackColor = Color(0xFF410002),
+                                uncheckedThumbColor = Color(0xFF410002),
+                                uncheckedTrackColor = Color(0xFFF2B8B5).copy(alpha = 0.5f)
+                            ),
+                            modifier = Modifier.testTag("sms_active_switch")
+                        )
+                    }
+                }
+
+                // Notification Switch
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ดักแจ้งเตือน",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    if (!hasNotificationAccess) {
+                        Button(
+                            onClick = onRequestNotificationAccess,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                            modifier = Modifier.height(24.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.2f))
+                        ) {
+                            Text("สิทธิ์", fontSize = 9.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Switch(
+                            checked = isNotificationActive,
+                            onCheckedChange = onToggleNotificationService,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color(0xFFF2B8B5),
+                                checkedTrackColor = Color(0xFF410002),
+                                uncheckedThumbColor = Color(0xFF410002),
+                                uncheckedTrackColor = Color(0xFFF2B8B5).copy(alpha = 0.5f)
+                            ),
+                            modifier = Modifier.testTag("notification_active_switch")
+                        )
+                    }
                 }
             }
         }
@@ -1041,6 +1188,35 @@ fun SettingsScreen(
     var authHeaderValue by remember { mutableStateOf(settings.authHeaderValue) }
     var senderFilter by remember { mutableStateOf(settings.senderFilter) }
     var keywordFilter by remember { mutableStateOf(settings.keywordFilter) }
+    var trackedBanks by remember { mutableStateOf(settings.trackedBanks) }
+    var onlyForwardTrackedBanks by remember { mutableStateOf(settings.onlyForwardTrackedBanks) }
+
+    val bankAppsList = remember {
+        listOf(
+            Triple("com.kasikorn.kplus", "ธนาคารกสิกรไทย (K PLUS)", Color(0xFF00A34F)),
+            Triple("com.scb.phone", "ธนาคารไทยพาณิชย์ (SCB EASY)", Color(0xFF4E2A84)),
+            Triple("th.co.krungthaibank.next", "ธนาคารกรุงไทย (Krungthai NEXT)", Color(0xFF00A1F1)),
+            Triple("com.bualuang.mbanking", "ธนาคารกรุงเทพ (Bualuang mBanking)", Color(0xFF0038A8)),
+            Triple("kr.co.krungsri.kma", "ธนาคารกรุงศรีอยุธยา (KMA)", Color(0xFF7A6B58)),
+            Triple("com.ttbbank.oneapp", "ธนาคารทหารไทยธนชาต (ttb touch)", Color(0xFFFF5000)),
+            Triple("th.or.gsb.mymo", "ธนาคารออมสิน (MyMo)", Color(0xFFEC008C)),
+            Triple("th.co.truemoney.wallet", "ทรูมันนี่ วอลเล็ท (TrueMoney)", Color(0xFFFF8200))
+        )
+    }
+
+    val selectedBanksList = remember(trackedBanks) {
+        trackedBanks.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
+    }
+
+    val onToggleBank: (String) -> Unit = { pkg ->
+        val currentSet = trackedBanks.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toMutableSet()
+        if (currentSet.contains(pkg.lowercase())) {
+            currentSet.remove(pkg.lowercase())
+        } else {
+            currentSet.add(pkg.lowercase())
+        }
+        trackedBanks = currentSet.joinToString(",")
+    }
 
     // Update state when settings updates from DB
     LaunchedEffect(settings) {
@@ -1049,6 +1225,8 @@ fun SettingsScreen(
         authHeaderValue = settings.authHeaderValue
         senderFilter = settings.senderFilter
         keywordFilter = settings.keywordFilter
+        trackedBanks = settings.trackedBanks
+        onlyForwardTrackedBanks = settings.onlyForwardTrackedBanks
     }
 
     LazyColumn(
@@ -1158,6 +1336,163 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 12.dp)
             ) {
                 Text(
+                    text = "BANK NOTIFICATION TRACKER",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black)
+                )
+            }
+        }
+
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, Color(0xFFCAC4D0).copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "ดักรับเฉพาะแจ้งเตือนของแอปธนาคารจริงๆ เท่านั้น",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color.Black
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "เมื่อเปิดใช้งาน ระบบจะกรองและอนุญาตเฉพาะแอปพลิเคชันการเงินที่ผ่านการเลือกในรายการด้านล่างเพื่อป้องกันการดักจับข้อความไม่พึงประสงค์",
+                                fontSize = 11.sp,
+                                color = Color(0xFF49454F).copy(alpha = 0.8f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = onlyForwardTrackedBanks,
+                            onCheckedChange = { onlyForwardTrackedBanks = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF6750A4),
+                                uncheckedThumbColor = Color(0xFF6750A4),
+                                uncheckedTrackColor = Color(0xFFCAC4D0).copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(color = Color(0xFFCAC4D0).copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "เลือกธนาคารในเครื่องที่คุณต้องการติดตาม:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = Color.Black,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    bankAppsList.forEach { (pkg, name, color) ->
+                        val isSelected = selectedBanksList.contains(pkg.lowercase())
+                        val initial = name.replace("ธนาคาร", "").trim().take(1)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onToggleBank(pkg) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(color.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = initial,
+                                        color = color,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = name,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.sp,
+                                        color = Color.Black
+                                    )
+                                    Text(
+                                        text = pkg,
+                                        fontSize = 10.sp,
+                                        color = Color(0xFF49454F).copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                            Switch(
+                                checked = isSelected,
+                                onCheckedChange = { onToggleBank(pkg) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = color,
+                                    uncheckedThumbColor = color.copy(alpha = 0.6f),
+                                    uncheckedTrackColor = color.copy(alpha = 0.1f)
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(color = Color(0xFFCAC4D0).copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = trackedBanks,
+                        onValueChange = { trackedBanks = it },
+                        label = { Text("รายการแอปธนาคารที่ติดตาม (คั่นด้วยจุลภาค ,)") },
+                        placeholder = { Text("com.kasikorn.kplus,com.scb.phone") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF6750A4),
+                            unfocusedBorderColor = Color(0xFFCAC4D0),
+                            focusedLabelColor = Color(0xFF6750A4),
+                            unfocusedLabelColor = Color(0xFF49454F)
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "รายการชื่อแพ็กเกจของแอปธนาคารหรือแอปกระเป๋าเงินอิเล็กทรอนิกส์ทั้งหมดที่คุณยินยอมให้ติดตามแจ้งเตือน",
+                        fontSize = 10.sp,
+                        color = Color(0xFF49454F).copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
+            }
+        }
+
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 12.dp)
+            ) {
+                Text(
                     text = "MESSAGE FILTER",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -1240,7 +1575,9 @@ fun SettingsScreen(
                             authHeaderName = authHeaderName.trim(),
                             authHeaderValue = authHeaderValue.trim(),
                             senderFilter = senderFilter.trim(),
-                            keywordFilter = keywordFilter.trim()
+                            keywordFilter = keywordFilter.trim(),
+                            trackedBanks = trackedBanks.trim(),
+                            onlyForwardTrackedBanks = onlyForwardTrackedBanks
                         )
                     )
                 },
@@ -1255,201 +1592,6 @@ fun SettingsScreen(
                 Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "บันทึก")
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("บันทึกข้อมูลตั้งค่าระบบ", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            }
-        }
-    }
-}
-
-@Composable
-fun SimulatorScreen(
-    isServiceActive: Boolean,
-    isAutoSimulating: Boolean,
-    onToggleAutoSimulate: (Boolean) -> Unit,
-    onSimulate: (String, String) -> Unit
-) {
-    var sender by remember { mutableStateOf("KBank") }
-    var message by remember { mutableStateOf("คุณได้รับโอนเงินจำนวน 3,500.00 บาท จาก นายสมชาย เพื่อจ่ายค่าบริการอาหารและเครื่องดื่ม") }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(bottom = 24.dp)
-    ) {
-        item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 12.dp)
-            ) {
-                Text(
-                    text = "SMS SIMULATOR",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black)
-                )
-            }
-        }
-
-        // Live Warning or Success info card
-        item {
-            if (!isServiceActive) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF9DEDC)),
-                    shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, Color(0xFFB3261E).copy(alpha = 0.2f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(imageVector = Icons.Default.Warning, contentDescription = "เตือน", tint = Color(0xFFB3261E))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "ระบบปิดอยู่! การจำลองนี้จะถูกบันทึกแต่จะไม่ส่งข้อมูลจริงไปยัง Webhook",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-                    }
-                }
-            } else {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8DEF8)),
-                    shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, Color(0xFF6750A4).copy(alpha = 0.2f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(imageVector = Icons.Default.Info, contentDescription = "ข้อมูล", tint = Color(0xFF6750A4))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "ระบบออนไลน์อยู่! การจำลองจะพยายามส่ง HTTP POST ไปยัง Webhook ของคุณจริง",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-                    }
-                }
-            }
-        }
-
-        // Auto simulation toggle card
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, Color(0xFFCAC4D0).copy(alpha = 0.5f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "ระบบจำลองการส่งแบบอัตโนมัติ (Auto Send)",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = Color.Black
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (isAutoSimulating) "กำลังส่งข้อความจำลองอัตโนมัติทุกๆ 15 วินาที..." else "เปิดสวิตช์เพื่อเริ่มจำลองสถานการณ์โอนเงินเข้าออโต้เรื่อยๆ",
-                            fontSize = 11.sp,
-                            color = Color.Black.copy(alpha = 0.6f)
-                        )
-                    }
-                    Switch(
-                        checked = isAutoSimulating,
-                        onCheckedChange = onToggleAutoSimulate,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = Color.Black,
-                            uncheckedThumbColor = Color.Black.copy(alpha = 0.6f),
-                            uncheckedTrackColor = Color.Black.copy(alpha = 0.1f)
-                        )
-                    )
-                }
-            }
-        }
-
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, Color(0xFFCAC4D0).copy(alpha = 0.5f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    OutlinedTextField(
-                        value = sender,
-                        onValueChange = { sender = it },
-                        label = { Text("ผู้ส่ง (Sender)") },
-                        placeholder = { Text("เช่น KBANK, SCB, 021234567") },
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("simulator_sender_input"),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6750A4),
-                            unfocusedBorderColor = Color(0xFFCAC4D0),
-                            focusedLabelColor = Color(0xFF6750A4),
-                            unfocusedLabelColor = Color(0xFF49454F)
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = message,
-                        onValueChange = { message = it },
-                        label = { Text("เนื้อหาข้อความ SMS (Message Body)") },
-                        placeholder = { Text("โอนเงินเข้าจำนวน 500 บาท...") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(130.dp)
-                            .testTag("simulator_message_input"),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6750A4),
-                            unfocusedBorderColor = Color(0xFFCAC4D0),
-                            focusedLabelColor = Color(0xFF6750A4),
-                            unfocusedLabelColor = Color(0xFF49454F)
-                        )
-                    )
-                }
-            }
-        }
-
-        item {
-            Button(
-                onClick = {
-                    if (sender.isNotBlank() && message.isNotBlank()) {
-                        onSimulate(sender.trim(), message.trim())
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
-                    .testTag("simulator_submit_button"),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8DEF8), contentColor = Color.Black),
-                border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.2f))
-            ) {
-                Icon(imageVector = Icons.Default.Send, contentDescription = "จำลอง")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("ทดสอบจำลองเหตุการณ์รับข้อความ", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
         }
     }

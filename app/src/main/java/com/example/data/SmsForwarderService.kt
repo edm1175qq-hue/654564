@@ -66,20 +66,11 @@ class SmsForwarderService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
-
-        serviceScope.launch {
-            val settings = repository.getSettings()
-            repository.saveSettings(settings.copy(isServiceActive = true))
-        }
     }
 
     private fun stopForegroundServiceHelper() {
-        serviceScope.launch {
-            val settings = repository.getSettings()
-            repository.saveSettings(settings.copy(isServiceActive = false))
-            stopForeground(true)
-            stopSelf()
-        }
+        stopForeground(true)
+        stopSelf()
     }
 
     private fun createNotification(): Notification {
@@ -92,8 +83,8 @@ class SmsForwarderService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("PayGate SMS Forwarder")
-            .setContentText("แอปพลิเคชันกำลังทำงานและพร้อมส่งต่อ SMS")
+            .setContentTitle("PayGate Forwarder Service")
+            .setContentText("ระบบกำลังทำงานและพร้อมส่งต่อ SMS / แจ้งเตือนธนาคาร")
             .setSmallIcon(android.R.drawable.sym_action_chat)
             .setContentIntent(pendingIntent)
             .setOngoing(true)

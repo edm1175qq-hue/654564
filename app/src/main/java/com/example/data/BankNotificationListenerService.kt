@@ -55,10 +55,22 @@ class BankNotificationListenerService : NotificationListenerService() {
                 val repository = SmsRepository(database.smsLogDao(), database.appSettingsDao())
                 val settings = repository.getSettings()
 
-                // Check if forwarder service is active
-                if (!settings.isServiceActive) {
-                    Log.d(TAG, "Forwarder service is disabled in settings. Skipping notification.")
+                // Check if notification receiver is active
+                if (!settings.isNotificationActive) {
+                    Log.d(TAG, "Notification Listener service is disabled in settings. Skipping notification.")
                     return@launch
+                }
+
+                // Enforce bank filtering if enabled
+                if (settings.onlyForwardTrackedBanks) {
+                    val trackedList = settings.trackedBanks.split(",")
+                        .map { it.trim().lowercase() }
+                        .filter { it.isNotEmpty() }
+                    
+                    if (!trackedList.contains(packageName.lowercase())) {
+                        Log.d(TAG, "Notification skipped: Package '$packageName' is not in the tracked banks list.")
+                        return@launch
+                    }
                 }
 
                 // Apply Filters

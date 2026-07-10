@@ -11,5 +11,9 @@ data class AppSettings(
     val authHeaderValue: String = "fd49e732c5f5ed78fe5fe38b5f8ac8c2",
     val senderFilter: String = "", // Comma-separated sender list (e.g. SCB,KBank)
     val keywordFilter: String = "", // Comma-separated keyword list (e.g. OTP,โอนเงิน)
-    val isServiceActive: Boolean = true
+    val isSmsActive: Boolean = true,
+    val isNotificationActive: Boolean = true,
+    val trackedBanks: String = "com.kasikorn.kplus,com.scb.phone,th.co.krungthaibank.next,com.bualuang.mbanking,kr.co.krungsri.kma,com.ttbbank.oneapp,th.or.gsb.mymo,th.co.truemoney.wallet",
+    val onlyForwardTrackedBanks: Boolean = true
 )
+

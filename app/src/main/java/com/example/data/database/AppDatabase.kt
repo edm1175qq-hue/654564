@@ -9,7 +9,7 @@ import com.example.data.dao.SmsLogDao
 import com.example.data.entity.AppSettings
 import com.example.data.entity.SmsLog
 
-@Database(entities = [SmsLog::class, AppSettings::class], version = 1, exportSchema = false)
+@Database(entities = [SmsLog::class, AppSettings::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun smsLogDao(): SmsLogDao
     abstract fun appSettingsDao(): AppSettingsDao
@@ -24,7 +24,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "paygate_sms_db"
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }

@@ -42,7 +42,7 @@ class SmsReceiver : BroadcastReceiver() {
                 val settings = repository.getSettings()
 
                 // Check if forwarder service is active
-                if (!settings.isServiceActive) {
+                if (!settings.isSmsActive) {
                     Log.d(TAG, "SMS Forwarder service is disabled in settings. Skipping forwarding.")
                     pendingResult.finish()
                     return@launch
